@@ -1,23 +1,7 @@
 import React from 'react';
-import { View, Text, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Forecast } from '../app/types';
-
-interface Styles {
-  weatherItemContainer: ViewStyle;
-  weatherItemWarper: ViewStyle;
-}
-
-const styles: Styles = {
-  weatherItemContainer: {
-    marginBottom: 2,
-  },
-  weatherItemWarper: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 2,
-  },
-};
 
 interface WeatherItemProps {
   item: Forecast;
@@ -26,33 +10,60 @@ interface WeatherItemProps {
 const WeatherItem: React.FC<WeatherItemProps> = ({ item }) => {
   return (
     <View style={styles.weatherItemContainer}>
-      <View style={styles.weatherItemWarper}>
-        <Text>
-          {item.temperature} °C{' '}
-          <Ionicons name="thermometer" size={16} color="#FFF" />
-        </Text>
-        <Text>
-          {item.description} <Ionicons name="cloud" size={16} color="#FFF" />
-        </Text>
-        <Text>
-          {item.humidity}% <Ionicons name="water" size={16} color="#FFF" />
-        </Text>
+      <View style={styles.weatherItemWrapper}>
+        <View style={styles.iconTextWrapper}>
+          <Ionicons name="time" size={12} color="#FFF" />
+          <Text style={styles.weatherItemText}>{item.date}</Text>
+        </View>
+        <View style={styles.iconTextWrapper}>
+          <Ionicons name="thermometer" size={12} color="#FFF" />
+          <Text style={styles.weatherItemText}>{item.temperature} °C</Text>
+        </View>
+        <View style={styles.iconTextWrapper}>
+          <Text style={styles.weatherItemText}>{item.description}</Text>
+        </View>
       </View>
 
-      <View style={styles.weatherItemWarper}>
-        <Text>
-          {item.pressure} hPa{' '}
-          <Ionicons name="speedometer" size={16} color="#FFF" />
-        </Text>
-        <Text>
-          {item.windSpeed} m/s <Ionicons name="flag" size={16} color="#FFF" />
-        </Text>
-        <Text>
-          {item.date} <Ionicons name="time" size={16} color="#FFF" />
-        </Text>
+      <View style={styles.weatherItemWrapper}>
+        <View style={styles.iconTextWrapper}>
+          <Ionicons name="water" size={12} color="#FFF" />
+          <Text style={styles.weatherItemText}>{item.humidity}%</Text>
+        </View>
+        <View style={styles.iconTextWrapper}>
+          <Ionicons name="speedometer" size={12} color="#FFF" />
+          <Text style={styles.weatherItemText}>{item.pressure} hPa</Text>
+        </View>
+        <View style={styles.iconTextWrapper}>
+          <Ionicons name="flag" size={12} color="#FFF" />
+          <Text style={styles.weatherItemText}>{item.windSpeed} m/s</Text>
+        </View>
       </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  weatherItemContainer: {
+    backgroundColor: 'rgba(0, 86, 179, 0.5)',
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    gap: 2,
+    padding: 2,
+  },
+  weatherItemWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  iconTextWrapper: {
+    width: 90,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  weatherItemText: {
+    color: '#FFF',
+    fontSize: 12,
+  },
+});
 
 export default WeatherItem;

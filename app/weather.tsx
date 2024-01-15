@@ -7,17 +7,20 @@ import {
   TouchableOpacity,
   View,
   TextInput,
+  Keyboard,
 } from 'react-native';
 import axios from 'axios';
 import { baseURL } from './config';
 import { WeatherData } from './types';
 import WeatherItem from '../components/WeatherItem';
+import { ExternalLink } from '../components/ExternalLink';
 
 export default function Weather() {
   const [token, setToken] = useState('');
   const [city, setCity] = useState('');
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const favoritesLimit = 3;
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -32,9 +35,7 @@ export default function Weather() {
         const storedToken = await AsyncStorage.getItem('token');
         if (storedToken) {
           setToken(storedToken);
-          console.log('Token:', storedToken);
 
-          // Fetch user's favorite locations
           const favoritesResponse = await axios.get(
             `${baseURL}/user/favorites`,
             {
@@ -44,7 +45,6 @@ export default function Weather() {
             },
           );
           setFavorites(favoritesResponse.data);
-          console.log('Favorites:', favoritesResponse.data);
         } else {
           console.log('Token not found');
         }
@@ -59,7 +59,7 @@ export default function Weather() {
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('token');
-      router.replace('/login'); // Update to '/login'
+      router.replace('/login');
     } catch (error: any) {
       console.error('Error logging out:', error.message);
     }
@@ -74,7 +74,6 @@ export default function Weather() {
       });
 
       const weatherData = response.data;
-      console.log('Weather Data:', weatherData);
 
       setWeatherData(weatherData);
     } catch (error) {
@@ -86,6 +85,53 @@ export default function Weather() {
     }
   };
 
+  const addToFavorites = async (city: string) => {
+    try {
+      if (favorites.length < favoritesLimit) {
+        await axios.post(
+          `${baseURL}/user/add-favorite`,
+          {
+            location: city,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        setFavorites([...favorites, city]);
+      } else {
+        console.log('Favorites limit reached');
+      }
+    } catch (error: any) {
+      console.error('Error adding to favorites:', error.message);
+    }
+  };
+
+  const removeFromFavorites = async (city: string) => {
+    try {
+      await axios.delete(`${baseURL}/user/remove-favorite`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        data: {
+          location: city,
+        },
+      });
+
+      const updatedFavorites = favorites.filter((fav) => fav !== city);
+      setFavorites(updatedFavorites);
+    } catch (error: any) {
+      console.error('Error removing from favorites:', error.message);
+    }
+  };
+
+  const handleSearch = async () => {
+    getWeather(city);
+    Keyboard.dismiss();
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.inputContainer}>
@@ -95,10 +141,7 @@ export default function Weather() {
           value={city}
           onChangeText={(text) => setCity(text)}
         />
-        <TouchableOpacity
-          style={styles.searchButton}
-          onPress={() => getWeather(city)}
-        >
+        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
           <Text style={styles.buttonText}>Search</Text>
         </TouchableOpacity>
       </View>
@@ -122,6 +165,50 @@ export default function Weather() {
             </View>
           ))}
         </View>
+      )}
+
+      {weatherData && (
+        <TouchableOpacity
+          style={[
+            styles.button,
+            favorites.length >= favoritesLimit &&
+              !favorites.includes(weatherData?.city) && {
+                backgroundColor: 'gray',
+              },
+          ]}
+          onPress={() => {
+            if (favorites.includes(weatherData?.city)) {
+              removeFromFavorites(weatherData?.city);
+            } else {
+              addToFavorites(weatherData?.city);
+            }
+          }}
+          disabled={
+            !favorites.includes(weatherData?.city) &&
+            favorites.length >= favoritesLimit
+          }
+        >
+          <Text style={styles.buttonText}>
+            {favorites.includes(weatherData?.city)
+              ? 'Remove from favorites'
+              : 'Add to favorites'}
+          </Text>
+          {favorites.length >= favoritesLimit && (
+            <Text style={{ color: 'white' }}>
+              Favorites limit reached ({favoritesLimit})
+            </Text>
+          )}
+        </TouchableOpacity>
+      )}
+
+      {favorites.length >= favoritesLimit && (
+        <TouchableOpacity style={styles.button}>
+          <ExternalLink
+            href={'https://www.linkedin.com/in/jakub-kosmalski-profil/'}
+          >
+            Buy Premium
+          </ExternalLink>
+        </TouchableOpacity>
       )}
 
       <TouchableOpacity style={styles.button} onPress={handleLogout}>
@@ -174,11 +261,11 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: 'bold',
   },
   weatherInfoContainer: {
-    marginTop: 20,
+    marginTop: 15,
   },
   weatherItem: {
     marginBottom: 10,
